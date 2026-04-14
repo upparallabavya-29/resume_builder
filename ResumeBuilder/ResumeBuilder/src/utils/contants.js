@@ -1,0 +1,1 @@
+export const BASE_URL = "https://fullstackbakend-10.onrender.com"
