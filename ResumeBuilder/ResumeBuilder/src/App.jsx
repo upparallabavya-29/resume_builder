@@ -62,6 +62,11 @@ function App() {
     setIsLoggedIn(false);
   };
 
+  // ✅ Login handler
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+
   return (
     <ThemeProvider>
       <Router>
@@ -82,8 +87,8 @@ function App() {
             />
 
             {/* Auth */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            <Route path="/signup" element={<Signup onLogin={handleLogin} />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* Public Pages */}

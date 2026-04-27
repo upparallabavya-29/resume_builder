@@ -6,7 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useEffect } from "react";
 
-const Signup = () => {
+const Signup = ({ onLogin }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
@@ -28,15 +28,21 @@ const Signup = () => {
         localStorage.setItem("accessToken", token);
         localStorage.setItem("refreshToken", token);
         localStorage.setItem("user", userData);
-        window.dispatchEvent(new Event("storage"));
+        if (onLogin) onLogin();
+        navigate("/", { replace: true });
         toast.success("Signup/Login successful!", {
           position: "top-center",
           autoClose: 2000,
           theme: "colored",
-          onClose: () => navigate("/", { replace: true }),
         });
       } catch (err) {
         console.error("Error parsing user data:", err);
+      }
+    } else {
+      // Check if user is already logged in
+      const existingToken = localStorage.getItem("accessToken");
+      if (existingToken) {
+        navigate("/", { replace: true });
       }
     }
   }, [navigate]);

@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { BASE_URL } from "../utils/contants";
 import { useEffect } from "react";
 
-const Login = () => {
+const Login = ({ onLogin }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -21,15 +21,21 @@ const Login = () => {
         localStorage.setItem("accessToken", token);
         localStorage.setItem("refreshToken", token); // Using same token for now or handle refresh token if available
         localStorage.setItem("user", userData);
-        window.dispatchEvent(new Event("storage"));
+        if (onLogin) onLogin(); // Update App state
+        navigate("/", { replace: true });
         toast.success("Login successful!", {
           position: "top-center",
           autoClose: 2000,
           theme: "colored",
-          onClose: () => navigate("/", { replace: true }),
         });
       } catch (err) {
         console.error("Error parsing user data:", err);
+      }
+    } else {
+      // If no tokens in URL, check if user is already logged in via localStorage
+      const existingToken = localStorage.getItem("accessToken");
+      if (existingToken) {
+        navigate("/", { replace: true });
       }
     }
   }, [navigate]);
@@ -50,15 +56,13 @@ const Login = () => {
       localStorage.setItem("refreshToken", res.data.refreshToken);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      // Update global state
-      window.dispatchEvent(new Event("storage"));
-
+      if (onLogin) onLogin();
       toast.success(res.data.message || "Login successful!", {
         position: "top-center",
         autoClose: 2000,
         theme: "colored",
-        onClose: () => navigate("/", { replace: true }),
       });
+      navigate("/", { replace: true });
     } catch (err) {
       toast.error(
         err.response?.data?.message || "Login failed! Please try again.",
