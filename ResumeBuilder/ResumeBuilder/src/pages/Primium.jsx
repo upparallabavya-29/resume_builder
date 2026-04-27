@@ -62,9 +62,8 @@ export default function Premium() {
         navigate("/login");
         return;
       }
-      alert(
-        err.response?.data?.error || err.response?.data?.message || "Failed to initiate payment. Try again!"
-      );
+      const errorMsg = err.response?.data?.details || err.response?.data?.error || err.response?.data?.message || "Failed to initiate payment. Try again!";
+      alert(errorMsg);
     }
   };
 

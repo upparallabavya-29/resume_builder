@@ -64,8 +64,8 @@ paymentRouter.post("/paymentcreate", authMiddleware(["user"]), async (req, res) 
       paymentRecordId: savedPayment._id,
     });
   } catch (err) {
-    console.error("Error creating payment:", err);
-    res.status(500).json({ error: "Payment creation failed" });
+    console.error("❌ Error creating Razorpay order:", err);
+    res.status(500).json({ error: "Payment creation failed", details: err.message });
   }
 });
 
