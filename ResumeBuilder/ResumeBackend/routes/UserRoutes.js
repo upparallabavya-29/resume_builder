@@ -4,6 +4,7 @@ const UserModel = require("../models/Usermodel");
 const saltRounds = 9;
 const passport = require("passport");
 const GitHubStrategy = require("passport-github");
+const GoogleStrategy = require("passport-google-oauth20");
 require("dotenv").config();
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
@@ -115,42 +116,47 @@ UserRouter.post("/login", async (req, res) => {
   }
 });
 
-UserRouter.get("/auth/github", passport.authenticate("github"));
+UserRouter.get("/auth/github", passport.authenticate("github", { scope: ["user:email"] }));
 
 UserRouter.get(
   "/auth/github/callback",
-  passport.authenticate("github", {
-    session: false,
-    failureRedirect: "/login",
-  }),
-  async function (req, res) {
-    try {
-      const githubId = req.user.id;
-      const email =
-        req.user.emails?.[0]?.value || `github_${githubId}@example.com`;
+  passport.authenticate("github", { failureRedirect: "/login" }),
+  (req, res) => {
+    const token = jwt.sign(
+      { userId: req.user._id, role: req.user.role || "user" },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "1d" }
+    );
+    const user = JSON.stringify({
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      username: req.user.username,
+      profileUrl: req.user.profileUrl
+    });
+    res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/login?token=${token}&user=${encodeURIComponent(user)}`);
+  }
+);
 
-      let user = await UserModel.findOne({ profileId: githubId });
+UserRouter.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
-      if (!user) {
-        user = await UserModel.create({
-          profileId: githubId,
-          email,
-          username: req.user.username || `github_user_${githubId}`,
-          password: "github_oauth", // optional placeholder
-        });
-      }
-
-      const token = jwt.sign(
-        { userId: user._id, role: user.role || "user" },
-        process.env.JWT_SECRET_KEY,
-        { expiresIn: "1d" }
-      );
-
-      res.status(200).json({ message: "GitHub Login Success", token });
-    } catch (error) {
-      console.error("GitHub login error:", error);
-      res.status(500).json({ message: "GitHub login failed" });
-    }
+UserRouter.get(
+  "/auth/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  (req, res) => {
+    const token = jwt.sign(
+      { userId: req.user._id, role: req.user.role || "user" },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "1d" }
+    );
+    const user = JSON.stringify({
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      username: req.user.username,
+      profileUrl: req.user.profileUrl
+    });
+    res.redirect(`${process.env.FRONTEND_URL || "http://localhost:5173"}/login?token=${token}&user=${encodeURIComponent(user)}`);
   }
 );
 
@@ -300,11 +306,6 @@ UserRouter.get("/profile", authMiddleware(), async (req, res) => {
     res.status(500).json({ message: "Failed to fetch profile" });
   }
 });
-
-// --- METADATA ROUTES ---
-UserRouter.get("/config/sections", (req, res) => res.json(SectionRegistry));
-UserRouter.get("/config/templates", (req, res) => res.json(TemplateRegistry));
-UserRouter.get("/config/themes", (req, res) => res.json(ThemeRegistry));
 
 // --- METADATA ROUTES ---
 UserRouter.get("/config/sections", (req, res) => res.json(SectionRegistry));
